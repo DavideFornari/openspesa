@@ -3,8 +3,9 @@
 ## Phase 0: Foundations (12 to 25 October 2026)
 
 - [x] Scaffold repo: LICENSE, README, CONTRIBUTING, CI, pre-commit
-- [ ] Inspect the ANAC open data portal: URL pattern, format, real column names
-- [ ] Ingestion module for one month of ANAC CIG data, with manifest (URL, timestamp, hash)
+- [x] Inspect the ANAC open data portal → `docs/sources/anac.md`
+- [x] Ingestion module for one month of ANAC CIG data, with manifest (URL, timestamp, hash)
+- [ ] **Decide:** ANAC data is CC BY-SA 4.0, not CC BY 4.0, so our dataset license must change
 - [ ] Spike: ANAC download from a GitHub Actions runner (Gate A); fallback if blocked
 - [ ] Spike: DuckDB-WASM querying Parquet on Hugging Face from a static page
 - [ ] Profile three months of CIG data → `docs/profiling.md`
