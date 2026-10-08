@@ -17,3 +17,6 @@ transform/dbt_packages/
 node_modules/
 web/dist/
 .astro/
+
+# Local Claude Code preview config
+.claude/

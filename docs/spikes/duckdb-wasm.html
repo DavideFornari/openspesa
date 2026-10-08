@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DuckDB-WASM spike</title>
+<style>
+  body { font: 15px/1.5 system-ui, sans-serif; max-width: 60rem; margin: 2rem auto; padding: 0 1rem; }
+  table { border-collapse: collapse; margin: .5rem 0 1.5rem; }
+  th, td { border: 1px solid #ccc; padding: .25rem .5rem; text-align: left; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  code { background: #f3f3f3; padding: 0 .2rem; }
+</style>
+</head>
+<body>
+<h1>DuckDB-WASM spike</h1>
+<p>Queries <code id="src"></code> from the browser. No server: DuckDB runs in this page and
+fetches only the byte ranges of the Parquet file it needs.</p>
+<p id="status" role="status">Loading DuckDB…</p>
+<div id="out"></div>
+
+<script type="module">
+import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.33.1-dev57.0/+esm";
+
+const URL_PARQUET = "https://huggingface.co/datasets/openspesa/spike/resolve/main/cig_2025_01.parquet";
+const QUERIES = {
+  "Row count (reads only the footer)": `select count(*) as rows from '${URL_PARQUET}'`,
+  "Lots by procedure type (one column)": `
+    select tipo_scelta_contraente, count(*) as lots
+    from '${URL_PARQUET}' group by 1 order by 2 desc limit 10`,
+  "Top contracting authorities in Veneto by lot value": `
+    select denominazione_amministrazione_appaltante as authority,
+           round(sum(try_cast(importo_lotto as double))) as euros, count(*) as lots
+    from '${URL_PARQUET}'
+    where sezione_regionale = 'SEZIONE REGIONALE VENETO'
+    group by 1 order by 2 desc limit 10`,
+};
+
+const status = document.getElementById("status");
+const out = document.getElementById("out");
+document.getElementById("src").textContent = URL_PARQUET;
+
+function render(title, table, ms) {
+  const cols = table.schema.fields.map((f) => f.name);
+  const h = document.createElement("h2");
+  h.textContent = `${title} (${ms.toFixed(0)} ms)`;
+  const t = document.createElement("table");
+  t.insertRow().append(...cols.map((c) => Object.assign(document.createElement("th"), { textContent: c })));
+  for (const row of table.toArray()) {
+    const tr = t.insertRow();
+    for (const c of cols) {
+      const td = tr.insertCell();
+      const v = row[c];
+      td.textContent = typeof v === "number" || typeof v === "bigint" ? Number(v).toLocaleString("it-IT") : v;
+      if (typeof v !== "string") td.className = "num";
+    }
+  }
+  out.append(h, t);
+}
+
+try {
+  const bundle = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
+  // Workers must be same-origin, so wrap the CDN worker script in a local blob.
+  const workerUrl = URL.createObjectURL(
+    new Blob([`importScripts("${bundle.mainWorker}");`], { type: "text/javascript" }));
+  const db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(), new Worker(workerUrl));
+  await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+  URL.revokeObjectURL(workerUrl);
+  const conn = await db.connect();
+  // httpfs wrongly decides HF's redirected URLs don't support ranges and downloads the
+  // whole file; disabling the fallback makes it use range requests.
+  await conn.query("load httpfs");
+  await conn.query("set auto_fallback_to_full_download = false");
+
+  for (const [title, sql] of Object.entries(QUERIES)) {
+    status.textContent = `Running: ${title}…`;
+    const t0 = performance.now();
+    render(title, await conn.query(sql), performance.now() - t0);
+  }
+  status.textContent = "Done.";
+} catch (err) {
+  status.textContent = `Error: ${err.message}`;
+  console.error(err);
+}
+</script>
+</body>
+</html>

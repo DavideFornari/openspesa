@@ -8,8 +8,11 @@
 - [x] Dataset license: CC BY-SA 4.0 (ANAC is ShareAlike); to confirm in the Gate B review
 - [x] Spike: ANAC download from a GitHub Actions runner → **blocked (403)**, see
       `docs/spikes/anac-runner.md`
-- [ ] **Decide:** fallback design (home download → HF raw mirror → CI builds)
-- [ ] Spike: DuckDB-WASM querying Parquet on Hugging Face from a static page
+- [ ] **Decide:** fallback design (home download → HF raw mirror → CI builds), automated
+      with Windows Task Scheduler plus a staleness alert in CI
+- [x] Spike: DuckDB-WASM querying Parquet on Hugging Face → works with
+      `auto_fallback_to_full_download=false`; latency per request is the limit, see
+      `docs/spikes/duckdb-wasm.md`
 - [ ] Profile three months of CIG data → `docs/profiling.md`
 - [ ] ADR-001 storage and hosting
 - [ ] ADR-002 entity keys and natural-person detection
@@ -25,3 +28,5 @@
 - 2026-10-09: scaffold, ANAC ingester (one month, manifest), portal notes, Gate A spike
   (runners get 403). Dataset license set to CC BY-SA 4.0. Next: decide fallback, then
   profiling (3 months) and the DuckDB-WASM spike.
+- 2026-10-09 (cont.): HF org `openspesa` and dataset `openspesa/spike` set up; DuckDB-WASM
+  spike done. Next: decide fallback, profiling, ADR-001 and ADR-002.
