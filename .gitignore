@@ -18,5 +18,8 @@ node_modules/
 web/dist/
 .astro/
 
-# Local Claude Code preview config
+# Personal Claude Code config (preview server, graphify instructions and hooks)
 .claude/
+
+# Personal graphify knowledge graph (rebuilt by local git hooks)
+graphify-out/
