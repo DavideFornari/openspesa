@@ -1,0 +1,19 @@
+# Downloaded and generated data lives outside git (raw files, Parquet, DuckDB files)
+data/
+*.duckdb
+*.parquet
+
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# dbt
+transform/target/
+transform/logs/
+transform/dbt_packages/
+
+# web
+node_modules/
+web/dist/
+.astro/
