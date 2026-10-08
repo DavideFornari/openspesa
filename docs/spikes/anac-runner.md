@@ -5,7 +5,7 @@
 ## What we ran
 
 [`probe-anac.yml`](../../.github/workflows/probe-anac.yml) runs the same ingester that works
-from a home connection (`uv run python -m pipeline.ingest.anac 2025 1`), with the same
+from a home connection (`uv run python -m pipeline.ingest.anac month 2025 1`), with the same
 browser user-agent.
 
 | Where | Network | Result |
@@ -28,7 +28,7 @@ Home PC (monthly, ~5 min)                 GitHub Actions (public, scheduled)
 ─────────────────────────                 ──────────────────────────────────
 pipeline.ingest.anac  → data/raw/*.zip
                         manifest.jsonl
-upload raw/ to HF dataset "openspesa/raw" ─▶ download raw/ from HF
+upload raw/ to HF dataset "openspesa/raw-mirror" ─▶ download raw/ from HF
                                             bronze → silver → gold (dbt-duckdb)
                                             publish Parquet to "openspesa/..."
 ```

@@ -8,8 +8,12 @@
 - [x] Dataset license: CC BY-SA 4.0 (ANAC is ShareAlike); to confirm in the Gate B review
 - [x] Spike: ANAC download from a GitHub Actions runner → **blocked (403)**, see
       `docs/spikes/anac-runner.md`
-- [ ] **Decide:** fallback design (home download → HF raw mirror → CI builds), automated
-      with Windows Task Scheduler plus a staleness alert in CI
+- [x] Fallback: weekly home sync (Task Scheduler) → HF `openspesa/raw-mirror`, staleness
+      alert in CI → `docs/operations.md`
+- [ ] Phase 1: CI build reads raw files from `openspesa/raw-mirror` and checks the hashes
+      in `manifest.jsonl`
+- [ ] Track snapshot datasets (`aggiudicatari`, `stazioni-appaltanti`): their files keep
+      the same name when republished, so `download` must compare `Last-Modified` first
 - [x] Spike: DuckDB-WASM querying Parquet on Hugging Face → works with
       `auto_fallback_to_full_download=false`; latency per request is the limit, see
       `docs/spikes/duckdb-wasm.md`
@@ -30,3 +34,7 @@
   profiling (3 months) and the DuckDB-WASM spike.
 - 2026-10-09 (cont.): HF org `openspesa` and dataset `openspesa/spike` set up; DuckDB-WASM
   spike done. Next: decide fallback, profiling, ADR-001 and ADR-002.
+- 2026-10-09 (cont.): fallback built. `sync cig` mirrored 7 monthly delta files (669 MB) to
+  `openspesa/raw-mirror`, hashes verified; weekly task "OpenSpesa ANAC sync" registered
+  (Mondays 19:00). Found that the ANAC API also needs an `Accept` header. Next: profiling,
+  ADR-001, ADR-002.

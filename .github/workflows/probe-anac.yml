@@ -20,7 +20,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.2.0
       - run: uv sync --locked
       - run: curl -sS https://ipinfo.io/json || true  # runner location, for the spike notes
-      - run: uv run python -m pipeline.ingest.anac "${{ inputs.year }}" "${{ inputs.month }}"
+      - run: uv run python -m pipeline.ingest.anac month "${{ inputs.year }}" "${{ inputs.month }}"
       - uses: actions/upload-artifact@v7
         if: always()
         with:

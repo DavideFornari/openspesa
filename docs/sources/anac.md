@@ -8,8 +8,12 @@ Checked on 2026-10-09 from a home connection in Italy.
   firewall (`server: volt-adc`).
 - The firewall rejects non-browser user-agents (curl, Python-urllib, `OpenSpesa/0.1`).
   A full browser user-agent works, even with `OpenSpesa/0.1 (+repo URL)` appended.
-- **A rejected request returns HTTP 200 with an HTML "Request Rejected" page**, not an
-  error status. The ingester treats any `text/html` response as a failure.
+- The CKAN API also rejects requests **without an `Accept` header** (Python's urllib sends
+  none; curl sends `*/*`). File downloads don't need it. The ingester always sends
+  `Accept: */*`.
+- **A rejected request returns HTTP 200 with a small HTML "Request Rejected" page**, not an
+  error status, and is sometimes labelled `text/plain`. So the ingester checks the content,
+  not the label: a download must be a valid zip and an API reply must be CKAN JSON.
 - Downloads send `Last-Modified`, `Content-Length`, `Accept-Ranges: bytes` and
   `Access-Control-Allow-Origin: *`.
 - CKAN API works: `/opendata/api/3/action/package_list`, `package_show?id=<dataset>`.

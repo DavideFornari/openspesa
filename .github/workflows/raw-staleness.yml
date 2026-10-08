@@ -1,0 +1,28 @@
+# Opens an issue when the Hugging Face raw mirror has not changed for 40 days, which means
+# the home sync (scripts/sync-anac.ps1) stopped running or ANAC stopped publishing.
+name: raw-staleness
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"  # Mondays 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: Raw mirror is stale
+        run: |
+          last=$(curl -sSf https://huggingface.co/api/datasets/openspesa/raw-mirror | jq -r .lastModified)
+          age=$(( ( $(date +%s) - $(date -d "$last" +%s) ) / 86400 ))
+          echo "openspesa/raw-mirror last changed $last ($age days ago)"
+          [ "$age" -le 40 ] && exit 0
+          open=$(gh issue list -R "$GITHUB_REPOSITORY" --state open --search "\"$TITLE\" in:title" --json number -q length)
+          [ "$open" -gt 0 ] && exit 0
+          gh issue create -R "$GITHUB_REPOSITORY" --title "$TITLE" --body \
+            "openspesa/raw-mirror last changed $last ($age days ago). Check data/logs/sync-anac.log on the home PC and the ANAC portal. See docs/operations.md."

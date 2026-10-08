@@ -1,16 +1,20 @@
 """Download ANAC open data files into data/raw and log each download in a manifest.
 
-Usage: uv run python -m pipeline.ingest.anac 2025 1
+Usage:
+  uv run python -m pipeline.ingest.anac month 2025 1   # one month of a yearly CIG dataset
+  uv run python -m pipeline.ingest.anac sync cig       # every CSV zip listed in a dataset
 """
 
 import argparse
 import hashlib
 import json
 import urllib.request
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
 BASE_URL = "https://dati.anticorruzione.it/opendata/download/dataset"
+CKAN_API = "https://dati.anticorruzione.it/opendata/api/3/action"
 # The portal's firewall rejects non-browser user-agents, so we send a browser one
 # and append our name so ANAC can still identify and contact us.
 USER_AGENT = (
@@ -20,31 +24,50 @@ USER_AGENT = (
 DATA_DIR = Path("data")
 
 
+def _open(url: str):
+    # The firewall also rejects requests without an Accept header. A rejection is HTTP 200
+    # with a small HTML page (sometimes labelled text/plain), so callers validate the body.
+    headers = {"User-Agent": USER_AGENT, "Accept": "*/*"}
+    return urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=60)
+
+
 def cig_month_url(year: int, month: int) -> str:
-    # ponytail: pattern checked for cig-2025 only; the current year lives in the "cig"
-    # delta dataset under another name. Switch to CKAN package_show when we need more.
     return f"{BASE_URL}/cig-{year}/filesystem/cig_csv_{year}_{month:02d}.zip"
 
 
+def csv_zip_urls(dataset: str, api: str = CKAN_API) -> list[str]:
+    """URLs of the zipped CSV resources of a dataset, from the portal's CKAN API."""
+    with _open(f"{api}/package_show?id={dataset}") as resp:
+        body = resp.read()
+    try:
+        resources = json.loads(body)["result"]["resources"]
+    except (ValueError, KeyError) as e:
+        msg = f"{dataset}: not a CKAN reply (blocked by firewall?): {body[:80]!r}"
+        raise RuntimeError(msg) from e
+    return [r["url"] for r in resources if r["format"] == "CSV" and r["url"].endswith(".zip")]
+
+
 def download(url: str, data_dir: Path = DATA_DIR) -> Path:
-    """Fetch url into data_dir/raw/anac/ unless already there; append a manifest line."""
-    dest = data_dir / "raw" / "anac" / url.rsplit("/", 1)[-1]
+    """Fetch url into data_dir/raw/anac/<dataset>/ unless already there; log it in the manifest."""
+    # ANAC URLs end in .../dataset/<dataset>/filesystem/<file>
+    _, dataset, _, name = url.rsplit("/", 3)
+    dest = data_dir / "raw" / "anac" / dataset / name
+    # ponytail: an existing file is never re-fetched, which is right for monthly files.
+    # Snapshot files republished under the same name (e.g. aggiudicatari_csv.zip) need a
+    # Last-Modified check before we track them.
     if dest.exists():
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
     part = dest.with_name(dest.name + ".part")
     sha = hashlib.sha256()
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=60) as resp:
-        # The firewall answers a rejected request with HTTP 200 and an HTML page.
-        content_type = resp.headers.get("Content-Type", "")
-        if content_type.startswith("text/html"):
-            raise RuntimeError(f"{url}: got HTML instead of a data file (blocked by firewall?)")
+    with _open(url) as resp, part.open("wb") as f:
         last_modified = resp.headers.get("Last-Modified")
-        with part.open("wb") as f:
-            while chunk := resp.read(1 << 20):
-                sha.update(chunk)
-                f.write(chunk)
+        while chunk := resp.read(1 << 20):
+            sha.update(chunk)
+            f.write(chunk)
+    if not zipfile.is_zipfile(part):
+        part.unlink()
+        raise RuntimeError(f"{url}: not a zip file (blocked by firewall?)")
     part.replace(dest)  # atomic: dest exists only when the download completed
 
     entry = {
@@ -60,12 +83,25 @@ def download(url: str, data_dir: Path = DATA_DIR) -> Path:
     return dest
 
 
+def sync(dataset: str, data_dir: Path = DATA_DIR, api: str = CKAN_API) -> list[Path]:
+    """Download every zipped CSV of a dataset that is not on disk yet."""
+    return [download(url, data_dir) for url in csv_zip_urls(dataset, api)]
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Download one month of ANAC CIG data.")
-    parser.add_argument("year", type=int)
-    parser.add_argument("month", type=int, choices=range(1, 13))
+    parser = argparse.ArgumentParser(description="Download ANAC open data files.")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+    month = sub.add_parser("month", help="one month of a yearly CIG dataset")
+    month.add_argument("year", type=int)
+    month.add_argument("month", type=int, choices=range(1, 13))
+    sub.add_parser("sync", help="every CSV zip of a dataset").add_argument("dataset")
     args = parser.parse_args()
-    print(download(cig_month_url(args.year, args.month)))
+
+    if args.cmd == "month":
+        print(download(cig_month_url(args.year, args.month)))
+    else:
+        for path in sync(args.dataset):
+            print(path)
 
 
 if __name__ == "__main__":
