@@ -1,0 +1,29 @@
+# Spike (Gate A): can a GitHub-hosted runner download from the ANAC portal?
+name: probe-anac
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        default: "2025"
+      month:
+        default: "1"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --locked
+      - run: curl -sS https://ipinfo.io/json || true  # runner location, for the spike notes
+      - run: uv run python -m pipeline.ingest.anac "${{ inputs.year }}" "${{ inputs.month }}"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: manifest
+          path: data/raw/manifest.jsonl
+          if-no-files-found: warn
