@@ -60,5 +60,6 @@ spending broadly. OpenSpesa aims to be a compatible, deep procurement layer alon
 ## License
 
 - Code: [AGPL-3.0](LICENSE).
-- Published dataset: CC BY 4.0, with attribution to each original source (ANAC,
-  OpenCoesione, and others) kept in the dataset metadata.
+- Published dataset: CC BY-SA 4.0, as required by ANAC's ShareAlike license, with
+  attribution to each original source (ANAC, OpenCoesione, and others) kept in the
+  dataset metadata.

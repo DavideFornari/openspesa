@@ -17,7 +17,7 @@ Checked on 2026-10-09 from a home connection in Italy.
 ## License
 
 Every dataset we checked (`cig-2025`, `cig`, `aggiudicatari`, `stazioni-appaltanti`) is
-**CC-BY-SA-4.0**, not CC BY 4.0. See the open question in [TODO.md](../../TODO.md).
+**CC-BY-SA-4.0**, not CC BY 4.0. Decided 2026-10-09: our published dataset is CC BY-SA 4.0.
 
 ## CIG datasets
 
