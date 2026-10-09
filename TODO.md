@@ -20,7 +20,7 @@
 - [x] Profile Q1 2025 + one delta → `docs/profiling.md` (deltas are upserts; ESITO can
       vanish; 3 authorities with personal tax codes; a few lots dominate totals)
 - [ ] Profile `aggiudicatari` (winners' tax codes) before finalizing ADR-002
-- [x] ADR-001 storage and hosting: drafted, **awaiting review** → `docs/adr/001-storage-and-hosting.md`
+- [x] ADR-001 storage and hosting (Accepted) → `docs/adr/001-storage-and-hosting.md`
 - [ ] ADR-002 entity keys and natural-person detection
 - [ ] Check the name OpenSpesa on GitHub, PyPI and domain registries
 - [ ] Open a Discussion on DoveVannoINostriSoldi

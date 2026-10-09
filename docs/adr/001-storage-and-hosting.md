@@ -1,6 +1,6 @@
 # ADR-001: Storage, processing and hosting
 
-- **Status:** Proposed (2026-10-09). Becomes Accepted when the maintainer approves it.
+- **Status:** Accepted (2026-10-09).
 - **Evidence:** [spikes/anac-runner.md](../spikes/anac-runner.md),
   [spikes/duckdb-wasm.md](../spikes/duckdb-wasm.md), [profiling.md](../profiling.md),
   [operations.md](../operations.md)
@@ -30,7 +30,7 @@ providers. Phase 0 established:
 | raw | ANAC files exactly as downloaded, plus `manifest.jsonl` | HF dataset `openspesa/raw-mirror` | append-only |
 | bronze | one typed Parquet file per raw file | runner disk only | rebuilt every run |
 | silver | one current row per CIG (and per entity), normalized codes | runner disk only | rebuilt every run |
-| gold | tables the website reads | HF dataset `openspesa/openspesa` (name to confirm) | new version per release |
+| gold | tables the website reads | HF dataset `openspesa/procurement` | new version per release |
 | site | static pages, no data inside | GitHub Pages | redeployed per release |
 
 Only raw and gold are stored. Bronze and silver are rebuilt from raw on every run.
@@ -135,11 +135,10 @@ then change that URL.
 
 ## Open questions
 
-1. **Gold dataset name:** `openspesa/openspesa`, `openspesa/procurement` or something
-   else? It's hard to change once people link to it.
+1. ~~Gold dataset name?~~ **Resolved:** `openspesa/procurement`.
 2. ~~Missing early 2026?~~ **Resolved:** the first delta, `20260401`, contains all of
    January to March 2026 (102,538, 126,344 and 136,703 CIGs), plus updates to 2025.
    The yearly files and deltas together leave no gap.
-3. **Deltas vs yearly files:** does a later yearly dataset (for example `cig-2026`,
+3. **Deltas vs yearly files (still open):** does a later yearly dataset (for example `cig-2026`,
    published in 2027) replace the deltas for that year? The apply order above assumes
    the most recent file wins, field by field, either way.
