@@ -48,6 +48,10 @@ Publication years in the September 2026 delta (main CPV rows only):
 |---|---|---|---|---|---|---|---|
 | CIGs | 1,792 | 1,154 | 2,191 | 3,907 | 11,650 | 28,624 | 112,853 |
 
+The first delta of the year, `20260401`, also covers the months before it: it holds all of
+January to March 2026 (102,538, 126,344 and 136,703 CIGs on their main CPV), plus 2025
+updates. There's no `cig-2026` yearly dataset yet, but no gap either.
+
 For the 4,917 CIGs in both Q1 2025 and the delta, these fields differ most often:
 
 | field | CIGs that differ | what changes |

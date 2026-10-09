@@ -20,7 +20,7 @@
 - [x] Profile Q1 2025 + one delta → `docs/profiling.md` (deltas are upserts; ESITO can
       vanish; 3 authorities with personal tax codes; a few lots dominate totals)
 - [ ] Profile `aggiudicatari` (winners' tax codes) before finalizing ADR-002
-- [ ] ADR-001 storage and hosting
+- [x] ADR-001 storage and hosting: drafted, **awaiting review** → `docs/adr/001-storage-and-hosting.md`
 - [ ] ADR-002 entity keys and natural-person detection
 - [ ] Check the name OpenSpesa on GitHub, PyPI and domain registries
 - [ ] Open a Discussion on DoveVannoINostriSoldi
@@ -43,3 +43,5 @@
 - 2026-10-09 (cont.): profiling done (`docs/profiling.md`, `scripts/profile_cig.py`),
   partita IVA check-digit validator in `pipeline/normalize`. Next: ADR-001, then profile
   `aggiudicatari` and write ADR-002.
+- 2026-10-09 (cont.): ADR-001 drafted (Proposed). Next: review ADR-001, profile
+  `aggiudicatari`, ADR-002.
