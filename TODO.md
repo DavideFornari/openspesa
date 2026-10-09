@@ -17,7 +17,9 @@
 - [x] Spike: DuckDB-WASM querying Parquet on Hugging Face → works with
       `auto_fallback_to_full_download=false`; latency per request is the limit, see
       `docs/spikes/duckdb-wasm.md`
-- [ ] Profile three months of CIG data → `docs/profiling.md`
+- [x] Profile Q1 2025 + one delta → `docs/profiling.md` (deltas are upserts; ESITO can
+      vanish; 3 authorities with personal tax codes; a few lots dominate totals)
+- [ ] Profile `aggiudicatari` (winners' tax codes) before finalizing ADR-002
 - [ ] ADR-001 storage and hosting
 - [ ] ADR-002 entity keys and natural-person detection
 - [ ] Check the name OpenSpesa on GitHub, PyPI and domain registries
@@ -38,3 +40,6 @@
   `openspesa/raw-mirror`, hashes verified; weekly task "OpenSpesa ANAC sync" registered
   (Mondays 19:00). Found that the ANAC API also needs an `Accept` header. Next: profiling,
   ADR-001, ADR-002.
+- 2026-10-09 (cont.): profiling done (`docs/profiling.md`, `scripts/profile_cig.py`),
+  partita IVA check-digit validator in `pipeline/normalize`. Next: ADR-001, then profile
+  `aggiudicatari` and write ADR-002.

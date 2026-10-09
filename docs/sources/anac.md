@@ -63,3 +63,6 @@ FLAG_PNRR_PNC
 ```
 
 Column names mix lowercase and UPPERCASE; bronze will lowercase them all.
+
+Delta files (`cig` dataset) have the same columns but escape quotes as `\"`, so readers
+must set `escape='\'`. See [../profiling.md](../profiling.md) for everything else.
