@@ -1,4 +1,4 @@
-# Profiling: ANAC CIG data
+# Profiling: ANAC CIG and winners data
 
 Profiled on 2026-10-09: the monthly files for **January to March 2025** (`cig-2025`,
 published 16 January 2026) and one monthly delta, **`20260901-cig_csv`** (dataset `cig`).
@@ -100,7 +100,7 @@ No 11-digit code has a bad check digit, and none has fewer than 11 digits. The c
 is validated by `pipeline/normalize/tax_codes.py`.
 
 **Not in this dataset:** winners' tax codes, which is where natural persons (sole traders,
-professionals) mostly appear. They're in `aggiudicatari`, which hasn't been profiled yet.
+professionals) mostly appear. See [Winners](#winners-aggiudicatari) below.
 
 ## Categories (one row per CIG, all four files)
 
@@ -161,6 +161,77 @@ Core fields (CIG, authority, amounts, procedure, dates, CPV) are never null; the
 fields are null on only 0.1% of delta rows. The script prints the full table for all 61
 columns.
 
+## Winners (aggiudicatari)
+
+Profiled on 2026-10-09: the delta **`20261001-aggiudicatari_csv`** (31.6 MB, 264,382 rows),
+joined to the CIG delta of the same month. Tax codes are only counted, never printed. To
+reproduce:
+
+```bash
+uv run python -m scripts.profile_aggiudicatari data/raw/anac/aggiudicatari/20261001-aggiudicatari_csv.zip --cig data/raw/anac/cig/20261001-cig_csv.zip
+```
+
+The file has six columns: `cig`, `ruolo`, `codice_fiscale`, `denominazione`,
+`tipo_soggetto`, `id_aggiudicazione`. It has one row per winner per CIG, and escapes
+quotes as `\"` like the CIG deltas.
+
+| | value |
+|---|---|
+| rows / CIGs / awards (`id_aggiudicazione`) | 264,382 / 245,437 / 150,706 |
+| distinct tax codes | 88,609 |
+| CIGs with one winner row | 237,730 (96.9%) |
+| winner CIGs found in the same month's CIG delta | 240,049 (97.8%) |
+| of those, CIGs with winners but no outcome (ESITO) | 1,258 |
+| rows with no role (`ruolo`) / no tax code | 13,360 / 8 |
+
+### Tax codes
+
+| kind (distinct codes) | codes | % |
+|---|---|---|
+| 11 digits, valid check | 63,747 | 71.9 |
+| **16 characters, personal, valid check** | **20,026** | **22.6** |
+| other: foreign or malformed | 3,040 | 3.4 |
+| under 11 digits, invalid even zero-padded | 745 | 0.8 |
+| under 11 digits, valid once zero-padded | 415 | 0.5 |
+| 11 digits, bad check | 339 | 0.4 |
+| 16 characters, personal shape, bad check | 159 | 0.2 |
+| `IT` + valid partita IVA | 138 | 0.2 |
+
+- **About a quarter of distinct winners are natural persons** (sole traders and
+  professionals). 159 more have the personal shape with a wrong check character
+  (probably typos), and they're still people.
+- **ANAC's entity type doesn't identify persons.** Valid personal codes appear under
+  `DITTA INDIVIDUALE` (sole trader, 15,699 rows) but also under `NON PRESENTE IN
+  ANAGRAFE` (6,805), `IMPRESA SINGOLA` (3,094), `IMPRESA` (1,553), `ATI` (497) and even
+  `STAZIONE APPALTANTE` (7). **The code's shape is the reliable signal, not the label.**
+- **Lost leading zeros are real here** (the onData issue): 415 codes become valid
+  partita IVA numbers when padded to 11 digits.
+- **138 codes are `IT` + an Italian partita IVA.** Stripping the prefix makes them valid.
+- **Foreign winners** use their own formats, for example `AA999999999` (EU-style VAT),
+  `99-9999999` (US EIN) and `AAA-999.999.999` (Swiss UID). They can't be validated or
+  joined reliably.
+
+### Roles, joint ventures and entity types
+
+| role (`ruolo`) | rows |
+|---|---|
+| OPERATORE ECONOMICO MONOSOGGETTIVO (single operator) | 228,195 |
+| *(null)* | 13,360 |
+| MANDANTE (joint-venture member) | 11,848 |
+| MANDATARIA (joint-venture lead) | 6,841 |
+| CONSORZIATO … (consortium member) | 2,268 |
+| IMPRESA AUSILIARIA (company lending its qualifications) | 1,496 |
+| others (designers, consortia, co-opted, qualifying subcontractors) | 374 |
+
+- **5,660 CIGs have joint-venture members.** 5,386 have exactly one lead, **172 have no
+  lead**, and 102 have several (several joint ventures on one CIG).
+- **`IMPRESA AUSILIARIA` and `SUBAPPALTATORE QUALIFICANTE` aren't winners** in the usual
+  sense: they lend qualifications. Counting them as recipients would inflate company
+  totals.
+- **`STAZIONE APPALTANTE` appears as a winner on 14,287 rows**: public bodies awarded
+  contracts (agreements between administrations, in-house companies).
+- **Names vary:** 461 codes (0.5%) appear with 2 or more names.
+
 ## Consequences
 
 **For ADR-001 (storage and hosting):**
@@ -173,7 +244,13 @@ columns.
   `codice_ausa`. Choose one.
 - Natural-person detection must cover the authority and delegation columns too
   (finding 6).
-- Winners need `aggiudicatari` profiled first.
+- Detect natural persons by **code shape** (16 alphanumerics), whether or not the check
+  character is valid, never by `tipo_soggetto`. That's about 23% of winners.
+- Normalize company codes before joining: zero-pad numeric codes under 11 digits when the
+  padded form is valid, and strip an `IT` prefix. Keep foreign codes as they are, flagged
+  as unvalidated.
+- Count only real recipients in company totals. Exclude `IMPRESA AUSILIARIA` and
+  `SUBAPPALTATORE QUALIFICANTE`, and handle the 172 joint ventures with no lead.
 
 **For Phase 1 (bronze/silver):**
 - Normalize month numbers, text case and CPV codes.
@@ -183,8 +260,10 @@ columns.
 
 ## Not checked
 
-- `aggiudicatari` (winners), `partecipanti` (bidders), `stazioni-appaltanti`
-  (authorities). Needed before ADR-002 is final.
+- `partecipanti` (bidders) and `stazioni-appaltanti` (authorities). `aggiudicatari` was
+  profiled from one delta only, not from its full snapshot file.
+- Whether partita IVA numbers of sole traders (11 digits, so not detected as persons)
+  appear among winners. In this file only 3 `DITTA INDIVIDUALE` rows use an 11-digit code.
 - A month from before 2024, to see the schema change under the 2023 procurement code.
 - The other six 2026 delta files. One delta was profiled; the other six are assumed to
   behave the same.

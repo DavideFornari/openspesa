@@ -19,7 +19,8 @@
       `docs/spikes/duckdb-wasm.md`
 - [x] Profile Q1 2025 + one delta → `docs/profiling.md` (deltas are upserts; ESITO can
       vanish; 3 authorities with personal tax codes; a few lots dominate totals)
-- [ ] Profile `aggiudicatari` (winners' tax codes) before finalizing ADR-002
+- [x] Profile `aggiudicatari` → `docs/profiling.md` (23% of winners are natural persons;
+      `tipo_soggetto` can't identify them; lost zeros and `IT` prefixes exist)
 - [x] ADR-001 storage and hosting (Accepted) → `docs/adr/001-storage-and-hosting.md`
 - [ ] ADR-002 entity keys and natural-person detection
 - [ ] Check the name OpenSpesa on GitHub, PyPI and domain registries
@@ -45,3 +46,5 @@
   `aggiudicatari` and write ADR-002.
 - 2026-10-09 (cont.): ADR-001 drafted (Proposed). Next: review ADR-001, profile
   `aggiudicatari`, ADR-002.
+- 2026-10-09 (cont.): winners profiled (`scripts/profile_aggiudicatari.py`), codice
+  fiscale check-character validator added. Next: ADR-002.

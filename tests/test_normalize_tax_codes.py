@@ -1,6 +1,6 @@
 import pytest
 
-from pipeline.normalize.tax_codes import is_valid_piva
+from pipeline.normalize.tax_codes import is_valid_cf, is_valid_piva
 
 
 # Contracting authorities from ANAC CIG data (cig_csv_2025_01), check digits verified by hand.
@@ -22,3 +22,22 @@ def test_valid(code):
 )
 def test_invalid(code):
     assert not is_valid_piva(code)
+
+
+def test_valid_cf():
+    # Textbook example (Mario Rossi, Rome, 1 January 1980): check sum 98, 98 % 26 = 20 -> "U".
+    assert is_valid_cf("RSSMRA80A01H501U")
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "RSSMRA80A01H501V",  # wrong check character
+        "rssmra80a01h501u",  # lowercase: normalize before validating
+        "RSSMRA80A01H501",  # too short
+        "03108560925",  # company code
+        "",
+    ],
+)
+def test_invalid_cf(code):
+    assert not is_valid_cf(code)
